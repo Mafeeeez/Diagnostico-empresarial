@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico Empresarial — Herramienta para Consultores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-900:#161f2b;
+    --navy-800:#1f2c3d;
+    --navy-700:#2b3c52;
+    --navy-600:#3c5170;
+    --amber:#d99a3d;
+    --amber-soft:#f4e3c5;
+    --paper:#faf7f2;
+    --card:#ffffff;
+    --ink:#20242b;
+    --ink-soft:#5c6470;
+    --line:#e6e0d4;
+    --crit:#c0553f;
+    --dev:#d99a3d;
+    --solid:#3f7d5c;
+    --excel:#2e5f8a;
+    --radius:12px;
+    --shadow:0 20px 44px -26px rgba(22,31,43,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;font-family:'Work Sans',sans-serif;color:var(--ink);background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:'Zilla Slab',serif;margin:0;color:var(--navy-900);line-height:1.2;}
+  p{margin:0;}
+  button{font-family:inherit;}
+  .app{display:grid;grid-template-columns:290px 1fr;min-height:100vh;}
+  @media(max-width:900px){.app{grid-template-columns:1fr;}}
+
+  /* ---------- SIDEBAR ---------- */
+  .sidebar{
+    background:var(--navy-900);color:#fff;padding:34px 26px;position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
+  @media(max-width:900px){.sidebar{position:relative;height:auto;padding:24px 20px;}}
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+  .brand svg{width:26px;height:26px;color:var(--amber);}
+  .brand b{font-family:'Zilla Slab',serif;font-size:18px;color:#fff;}
+  .brand-sub{font-size:11.5px;color:rgba(255,255,255,0.55);margin-bottom:34px;letter-spacing:.02em;}
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+  @media(max-width:900px){.steps{flex-direction:row;flex-wrap:wrap;}}
+  .step-item{
+    display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:9px;cursor:pointer;
+    font-size:13.5px;color:rgba(255,255,255,0.6);transition:background .15s ease,color .15s ease;
+  }
+  .step-item:hover{background:rgba(255,255,255,0.05);}
+  .step-item.active{background:var(--navy-700);color:#fff;}
+  .step-item.done{color:rgba(255,255,255,0.85);}
+  .step-num{
+    width:24px;height:24px;border-radius:50%;border:1.4px solid rgba(255,255,255,0.35);
+    display:flex;align-items:center;justify-content:center;font-size:11px;flex:none;
+  }
+  .step-item.active .step-num{background:var(--amber);border-color:var(--amber);color:var(--navy-900);font-weight:700;}
+  .step-item.done .step-num{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.5);}
+  .sidebar-foot{margin-top:36px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.12);font-size:12px;color:rgba(255,255,255,0.45);}
+  .sidebar-foot b{color:rgba(255,255,255,0.75);display:block;margin-bottom:4px;font-family:'Work Sans',sans-serif;font-weight:600;}
+
+  /* ---------- MAIN ---------- */
+  main{padding:52px 60px;max-width:900px;}
+  @media(max-width:700px){main{padding:34px 22px;}}
+  .eyebrow{font-size:12.5px;font-weight:600;color:var(--amber);letter-spacing:.04em;text-transform:uppercase;margin-bottom:10px;}
+  .panel-title{font-size:clamp(24px,3vw,32px);}
+  .panel-sub{margin-top:12px;color:var(--ink-soft);font-size:15px;max-width:600px;}
+
+  .field-grid{margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:600px){.field-grid{grid-template-columns:1fr;}}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:7px;}
+  .field input,.field select,.field textarea{
+    width:100%;padding:12px 14px;border:1.4px solid var(--line);border-radius:9px;font-size:14.5px;
+    font-family:inherit;background:var(--card);color:var(--ink);
+  }
+  .field textarea{resize:vertical;min-height:80px;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--amber);outline-offset:1px;border-color:var(--amber);}
+
+  .qcard{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;margin-top:20px;
+  }
+  .qcard .qnum{font-size:11.5px;font-weight:700;color:var(--amber);letter-spacing:.03em;margin-bottom:8px;}
+  .qcard .qtext{font-size:16px;color:var(--navy-900);font-weight:600;margin-bottom:16px;max-width:560px;}
+  .opts{display:flex;flex-wrap:wrap;gap:9px;}
+  .opt{
+    padding:9px 15px;border:1.4px solid var(--line);border-radius:999px;font-size:13px;font-weight:500;
+    cursor:pointer;color:var(--ink-soft);background:var(--paper);transition:all .15s ease;
+  }
+  .opt:hover{border-color:var(--amber);color:var(--navy-900);}
+  .opt.sel{background:var(--navy-900);border-color:var(--navy-900);color:#fff;font-weight:600;}
+
+  .note-box{margin-top:26px;}
+  .note-box label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:7px;}
+
+  .nav-buttons{margin-top:40px;display:flex;justify-content:space-between;align-items:center;gap:14px;}
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;padding:13px 26px;border-radius:9px;font-weight:600;font-size:14.5px;
+    cursor:pointer;border:1.4px solid transparent;transition:all .16s ease;
+  }
+  .btn-primary{background:var(--navy-900);color:#fff;}
+  .btn-primary:hover{background:var(--navy-700);}
+  .btn-primary:disabled{background:#c7c2b6;cursor:not-allowed;}
+  .btn-ghost{background:transparent;border-color:var(--line);color:var(--ink-soft);}
+  .btn-ghost:hover{border-color:var(--navy-900);color:var(--navy-900);}
+  .btn-amber{background:var(--amber);color:var(--navy-900);}
+  .btn-amber:hover{background:#c78a2f;}
+  .hint{font-size:12.5px;color:var(--ink-soft);}
+
+  /* ---------- RESULTS ---------- */
+  .score-hero{
+    background:var(--navy-900);color:#fff;border-radius:16px;padding:34px 36px;display:flex;align-items:center;gap:36px;flex-wrap:wrap;
+  }
+  .score-ring{position:relative;width:132px;height:132px;flex:none;}
+  .score-ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+  .score-ring .bg{fill:none;stroke:rgba(255,255,255,0.15);stroke-width:10;}
+  .score-ring .fg{fill:none;stroke:var(--amber);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s ease;}
+  .score-ring .num{
+    position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  }
+  .score-ring .num b{font-family:'Zilla Slab',serif;font-size:30px;}
+  .score-ring .num span{font-size:10.5px;color:rgba(255,255,255,0.6);}
+  .score-hero-text h2{color:#fff;font-size:24px;}
+  .score-hero-text p{margin-top:10px;color:rgba(255,255,255,0.75);font-size:14.5px;max-width:440px;}
+  .band-chip{
+    display:inline-block;margin-top:12px;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.02em;
+  }
+
+  .radar-wrap{margin-top:40px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:30px;display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center;}
+  @media(max-width:760px){.radar-wrap{grid-template-columns:1fr;}}
+  .radar-wrap h3{font-size:17px;margin-bottom:16px;}
+
+  .bars{display:flex;flex-direction:column;gap:16px;}
+  .bar-row .top{display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:6px;}
+  .bar-row .top b{color:var(--navy-900);font-weight:600;}
+  .bar-track{height:9px;border-radius:6px;background:var(--line);overflow:hidden;}
+  .bar-fill{height:100%;border-radius:6px;}
+
+  .area-report{
+    margin-top:20px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:24px 26px;
+  }
+  .area-report .head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;}
+  .area-report .head h4{font-size:17px;}
+  .area-report .diag{font-size:14px;color:var(--ink-soft);margin-bottom:14px;}
+  .rec-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;}
+  .rec-list li{display:flex;gap:10px;font-size:13.8px;color:var(--ink);}
+  .rec-list li svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--amber);}
+
+  .priority-box{
+    margin-top:40px;background:var(--amber-soft);border:1px solid #e7c98c;border-radius:var(--radius);padding:26px 28px;
+  }
+  .priority-box h3{font-size:17px;color:var(--navy-900);margin-bottom:6px;}
+  .priority-box p{font-size:13.8px;color:#6b5628;margin-bottom:14px;}
+  .priority-list{display:flex;flex-direction:column;gap:10px;}
+  .priority-list .pi{display:flex;gap:12px;align-items:flex-start;font-size:14px;}
+  .priority-list .pi .badge{
+    flex:none;width:24px;height:24px;border-radius:50%;background:var(--navy-900);color:#fff;font-size:12px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+  }
+
+  .result-actions{margin-top:36px;display:flex;gap:12px;flex-wrap:wrap;}
+
+  @media print{
+    .sidebar,.nav-buttons,.result-actions,.hint{display:none !important;}
+    .app{display:block;}
+    main{padding:0;max-width:100%;}
+    body{background:#fff;}
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg>
+      <b>Diagnóstico 360°</b>
+    </div>
+    <div class="brand-sub">Herramienta de diagnóstico empresarial para consultores</div>
+    <ul class="steps" id="steps-list"></ul>
+    <div class="sidebar-foot">
+      <b id="foot-company">Sin empresa registrada</b>
+      Los datos se guardan automáticamente en este navegador mientras completas el diagnóstico.
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main id="main-content"></main>
+</div>
+
+<script>
+/* ======================================================================
+   MODELO DE DATOS
+   ====================================================================== */
+const AREAS = [
+  {
+    key:'estrategia',
+    label:'Estrategia y dirección',
+    icon:'M3 21h18M6 21V9l6-4 6 4v12M10 21v-6h4v6',
+    intro:'Evalúa si la empresa tiene un rumbo claro, una propuesta de valor diferenciada y capacidad de adaptarse al entorno.',
+    questions:[
+      '¿La empresa tiene una visión y objetivos claros definidos para los próximos 1 a 3 años?',
+      '¿Existe un plan estratégico documentado y conocido por el equipo directivo?',
+      '¿La empresa monitorea de forma sistemática a su competencia y las tendencias del sector?',
+      '¿El equipo directivo tiene claridad sobre la propuesta de valor que los diferencia de otros competidores?',
+      '¿Las metas y la estrategia se revisan y ajustan periódicamente con base en resultados?'
+    ]
+  },
+  {
+    key:'finanzas',
+    label:'Finanzas',
+    icon:'M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6',
+    intro:'Revisa el control de costos, la salud del flujo de caja y la capacidad de la empresa para sostenerse financieramente.',
+    questions:[
+      '¿La empresa tiene un control claro y actualizado de sus costos fijos y variables?',
+      '¿Existe un flujo de caja proyectado que se revisa periódicamente?',
+      '¿Se conocen los márgenes de rentabilidad por producto, línea o servicio?',
+      '¿La empresa cuenta con reservas o respaldo financiero ante imprevistos?',
+      '¿Se hace seguimiento mensual a indicadores financieros clave (ventas, utilidad, cartera)?'
+    ]
+  },
+  {
+    key:'comercial',
+    label:'Comercial y marketing',
+    icon:'M3 3h3l2.4 12.2a2 2 0 002 1.8h7.7a2 2 0 002-1.6L21 8H6',
+    intro:'Analiza la forma en que la empresa atrae, convierte y retiene clientes, y cómo comunica su oferta.',
+    questions:[
+      '¿Existe un proceso claro y repetible para captar nuevos clientes?',
+      '¿La empresa conoce su tasa de conversión de prospectos a clientes?',
+      '¿Se mide de forma regular la satisfacción y retención de los clientes actuales?',
+      '¿La estrategia de precios está basada en un análisis de mercado y de costos, no solo en la intuición?',
+      '¿La empresa utiliza canales digitales (web, redes sociales, WhatsApp, etc.) de forma efectiva para vender?'
+    ]
+  },
+  {
+    key:'operaciones',
+    label:'Operaciones y procesos',
+    icon:'M12 2l2.4 4.9L20 8l-4 3.9.9 5.6L12 15l-4.9 2.5.9-5.6L4 8l5.6-1.1z',
+    intro:'Evalúa qué tan estandarizados, eficientes y resilientes son los procesos que sostienen la operación diaria.',
+    questions:[
+      '¿Los procesos clave del negocio están documentados y estandarizados (no dependen de la memoria de una persona)?',
+      '¿Existen indicadores de eficiencia operativa (tiempos, calidad, costos de proceso)?',
+      '¿La operación puede continuar con normalidad si una persona clave se ausenta?',
+      '¿La empresa cuenta con proveedores alternativos ante fallas o retrasos de suministro?',
+      '¿Existe un mecanismo sistemático para gestionar y controlar la calidad?'
+    ]
+  },
+  {
+    key:'talento',
+    label:'Talento humano y cultura',
+    icon:'M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2M10 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75',
+    intro:'Revisa la claridad de roles, el desarrollo del equipo y la salud del clima organizacional.',
+    questions:[
+      '¿Los roles y responsabilidades de cada colaborador están claramente definidos?',
+      '¿La empresa mide de alguna forma el clima organizacional o el compromiso del equipo?',
+      '¿Existen planes de capacitación o desarrollo para los colaboradores?',
+      '¿La rotación de personal es baja y está bajo control de la empresa?',
+      '¿Existe un proceso claro y estructurado de selección y contratación?'
+    ]
+  },
+  {
+    key:'tecnologia',
+    label:'Tecnología y digitalización',
+    icon:'M9 3H5a2 2 0 00-2 2v4m0 6v4a2 2 0 002 2h4m6 0h4a2 2 0 002-2v-4m0-6V5a2 2 0 00-2-2h-4',
+    intro:'Analiza el nivel de digitalización de la gestión, el uso de datos y la madurez tecnológica del equipo.',
+    questions:[
+      '¿La empresa usa herramientas digitales de gestión (CRM, ERP, hojas de cálculo estructuradas, etc.)?',
+      '¿Los datos del negocio están centralizados y son fáciles de consultar para tomar decisiones?',
+      '¿Existen protocolos básicos de seguridad de la información (respaldos, contraseñas, accesos)?',
+      '¿La presencia digital de la empresa (web, redes) está actualizada y refleja bien su oferta?',
+      '¿El equipo está capacitado para usar con soltura las herramientas digitales disponibles?'
+    ]
+  }
+];
+
+const SCALE = ['Nunca','Rara vez','A veces','Casi siempre','Siempre'];
+
+/* Recomendaciones por área y banda de madurez */
+const RECS = {
+  estrategia:{
+    critico:['Define en una sola página la visión, el objetivo principal del año y 3 prioridades máximo.','Agenda una sesión trimestral fija de revisión estratégica con el equipo directivo.'],
+    desarrollo:['Documenta el plan estratégico existente y compártelo con los líderes de cada área.','Incorpora un ejercicio simple de análisis de competencia cada trimestre.'],
+    solido:['Formaliza indicadores de seguimiento a la estrategia (OKR o similar) para dar trazabilidad.','Involucra a mandos medios en la revisión estratégica, no solo a la dirección.'],
+    excelente:['Explora escenarios de expansión o diversificación apoyados en la claridad estratégica actual.','Documenta el proceso como buena práctica replicable para nuevas líneas de negocio.']
+  },
+  finanzas:{
+    critico:['Implementa un control mensual básico de ingresos, costos fijos y variables en una hoja de cálculo.','Construye un flujo de caja proyectado a 3 meses como prioridad inmediata.'],
+    desarrollo:['Calcula el margen de rentabilidad por producto o servicio para identificar cuáles son realmente rentables.','Define un fondo de reserva mínimo equivalente a 1-2 meses de gastos fijos.'],
+    solido:['Automatiza el reporte mensual de KPIs financieros para reducir el tiempo de análisis manual.','Evalúa escenarios de financiamiento o inversión con proyecciones a 12 meses.'],
+    excelente:['Considera indicadores financieros avanzados (EBITDA, punto de equilibrio dinámico) para decisiones de crecimiento.','Usa la solidez financiera actual como palanca para negociar mejores condiciones con proveedores o bancos.']
+  },
+  comercial:{
+    critico:['Define un embudo comercial simple: cómo llegan los clientes, cómo se les da seguimiento y cómo se cierra la venta.','Empieza a registrar cuántos prospectos contactan a la empresa y cuántos terminan comprando.'],
+    desarrollo:['Implementa una encuesta corta de satisfacción después de cada venta o entrega.','Revisa la estrategia de precios comparando al menos 3 referentes del mercado.'],
+    solido:['Segmenta a los clientes por valor o frecuencia de compra para personalizar la atención comercial.','Fortalece un canal digital específico (web, redes o WhatsApp Business) como fuente constante de leads.'],
+    excelente:['Diseña un programa de fidelización o referidos aprovechando la buena retención actual.','Documenta el proceso comercial como manual de venta para nuevos vendedores.']
+  },
+  operaciones:{
+    critico:['Documenta por escrito el proceso más crítico del negocio, el que si falla detiene la operación.','Identifica cuáles decisiones dependen de una sola persona y empieza a delegarlas gradualmente.'],
+    desarrollo:['Define 2-3 indicadores simples de eficiencia (tiempo de entrega, % de errores, costo por unidad).','Busca al menos un proveedor alterno para tus insumos más críticos.'],
+    solido:['Estandariza los procesos documentados en manuales o checklists visuales para el equipo.','Implementa revisiones periódicas de calidad con responsables claros.'],
+    excelente:['Evalúa automatizar procesos repetitivos para liberar tiempo del equipo hacia tareas de mayor valor.','Usa la estabilidad operativa actual para absorber nuevos clientes o líneas sin perder calidad.']
+  },
+  talento:{
+    critico:['Define un organigrama simple con roles y responsabilidades claras, aunque el equipo sea pequeño.','Establece un proceso mínimo de contratación: qué se busca, cómo se evalúa, quién decide.'],
+    desarrollo:['Aplica una encuesta corta de clima laboral cada semestre para detectar riesgos a tiempo.','Identifica 1-2 necesidades de capacitación prioritarias para el equipo actual.'],
+    solido:['Formaliza un plan de desarrollo o crecimiento interno para retener al talento clave.','Da seguimiento a la rotación por área para anticipar posibles fugas de talento.'],
+    excelente:['Documenta la cultura organizacional actual como diferencial para atraer nuevo talento.','Considera esquemas de mentoría interna para escalar el conocimiento del equipo.']
+  },
+  tecnologia:{
+    critico:['Centraliza la información del negocio en un solo lugar (hoja de cálculo compartida o herramienta simple de gestión).','Implementa respaldos periódicos de la información más crítica del negocio.'],
+    desarrollo:['Evalúa adoptar una herramienta de gestión de clientes (CRM) accesible para negocios pequeños.','Actualiza la presencia digital básica de la empresa (web o redes) con información vigente.'],
+    solido:['Integra las herramientas digitales actuales para evitar doble digitación de información.','Capacita al equipo en el uso avanzado de las herramientas ya disponibles.'],
+    excelente:['Explora automatizaciones o analítica de datos para anticipar decisiones, no solo reportarlas.','Usa la madurez digital actual como ventaja competitiva frente a competidores menos digitalizados.']
+  }
+};
+
+const BAND_INFO = {
+  critico:{label:'Crítico — atención urgente',color:'var(--crit)'},
+  desarrollo:{label:'En desarrollo',color:'var(--dev)'},
+  solido:{label:'Sólido',color:'var(--solid)'},
+  excelente:{label:'Excelente',color:'var(--excel)'}
+};
+
+function bandOf(score){
+  if(score <= 40) return 'critico';
+  if(score <= 60) return 'desarrollo';
+  if(score <= 80) return 'solido';
+  return 'excelente';
+}
+
+/* ======================================================================
+   ESTADO
+   ====================================================================== */
+const STORAGE_KEY = 'diagnostico360_state_v1';
+
+let state = {
+  company:{ nombre:'', sector:'', tamano:'', consultor:'', fecha:'' },
+  answers:{}, // areaKey -> [scores]
+  notes:{},   // areaKey -> string
+  step:0
+};
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      state = Object.assign(state, parsed);
+    }
+  }catch(e){ /* ignore corrupted storage */ }
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+/* steps: 0 = datos empresa, 1..N = areas, N+1 = resultados */
+const TOTAL_STEPS = AREAS.length + 2;
+function resultsStepIndex(){ return AREAS.length + 1; }
+
+/* ======================================================================
+   RENDER: SIDEBAR
+   ====================================================================== */
+function renderSidebar(){
+  const list = document.getElementById('steps-list');
+  list.innerHTML = '';
+  const labels = ['Datos de la empresa', ...AREAS.map(a=>a.label), 'Diagnóstico'];
+  labels.forEach((label,i)=>{
+    const li = document.createElement('li');
+    li.className = 'step-item' + (i===state.step?' active':'') + (i<state.step?' done':'');
+    li.innerHTML = `<span class="step-num">${i<state.step?'✓':i+1}</span><span>${label}</span>`;
+    li.onclick = ()=>{ if(i <= maxReachableStep()) { state.step = i; render(); } };
+    list.appendChild(li);
+  });
+  document.getElementById('foot-company').textContent = state.company.nombre ? state.company.nombre : 'Sin empresa registrada';
+}
+
+function maxReachableStep(){
+  // puedes navegar libremente hacia atrás/adelante entre pasos ya completados
+  let m = 0;
+  if(state.company.nombre && state.company.sector && state.company.tamano) m = 1;
+  for(let i=0;i<AREAS.length;i++){
+    const ans = state.answers[AREAS[i].key];
+    if(ans && ans.every(v=>v!=null)) m = i+2;
+    else break;
+  }
+  return Math.min(m, TOTAL_STEPS-1);
+}
+
+/* ======================================================================
+   RENDER: STEP 0 — DATOS DE LA EMPRESA
+   ====================================================================== */
+function renderCompanyStep(){
+  const main = document.getElementById('main-content');
+  main.innerHTML = `
+    <p class="eyebrow">Paso 1 de ${TOTAL_STEPS}</p>
+    <h1 class="panel-title">Datos de la empresa</h1>
+    <p class="panel-sub">Registra la información básica de la empresa que vas a diagnosticar. Esto aparecerá en el informe final.</p>
+    <div class="field-grid">
+      <div class="field"><label>Nombre de la empresa</label><input id="f-nombre" type="text" placeholder="Ej. Innovaquímica S.A.S." value="${state.company.nombre}"></div>
+      <div class="field"><label>Sector</label>
+        <select id="f-sector">
+          <option value="">Selecciona un sector</option>
+          ${['Manufactura / Industrial','Comercio / Retail','Servicios','Alimentos','Tecnología','Construcción','Salud','Otro'].map(s=>`<option value="${s}" ${state.company.sector===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Tamaño de la empresa</label>
+        <select id="f-tamano">
+          <option value="">Selecciona un tamaño</option>
+          ${['Microempresa (1-10 empleados)','Pequeña (11-50 empleados)','Mediana (51-200 empleados)','Grande (+200 empleados)'].map(s=>`<option value="${s}" ${state.company.tamano===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>Consultor a cargo</label><input id="f-consultor" type="text" placeholder="Tu nombre" value="${state.company.consultor}"></div>
+    </div>
+    <div class="nav-buttons">
+      <span class="hint">Los datos se guardan automáticamente en este navegador.</span>
+      <button class="btn btn-primary" id="btn-next" onclick="goToArea(0)">Comenzar diagnóstico →</button>
+    </div>
+  `;
+  ['f-nombre','f-sector','f-tamano','f-consultor'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', ()=>{
+      state.company.nombre = document.getElementById('f-nombre').value;
+      state.company.sector = document.getElementById('f-sector').value;
+      state.company.tamano = document.getElementById('f-tamano').value;
+      state.company.consultor = document.getElementById('f-consultor').value;
+      saveState();
+      renderSidebar();
+    });
+    document.getElementById(id).addEventListener('change', ()=>{
+      document.getElementById(id).dispatchEvent(new Event('input'));
+    });
+  });
+}
+function goToArea(i){
+  const n = document.getElementById('f-nombre')?.value.trim();
+  const s = document.getElementById('f-sector')?.value;
+  const t = document.getElementById('f-tamano')?.value;
+  if(n===''||!s||!t){ alert('Por favor completa al menos el nombre, sector y tamaño de la empresa.'); return; }
+  state.step = 1;
+  saveState();
+  render();
+}
+
+/* ======================================================================
+   RENDER: PASOS DE ÁREA (1..N)
+   ====================================================================== */
+function renderAreaStep(areaIndex){
+  const area = AREAS[areaIndex];
+  if(!state.answers[area.key]) state.answers[area.key] = new Array(area.questions.length).fill(null);
+  if(state.notes[area.key] == null) state.notes[area.key] = '';
+
+  const main = document.getElementById('main-content');
+  main.innerHTML = `
+    <p class="eyebrow">Paso ${areaIndex+2} de ${TOTAL_STEPS} · Área de diagnóstico</p>
+    <h1 class="panel-title">${area.label}</h1>
+    <p class="panel-sub">${area.intro}</p>
+    <div id="q-container"></div>
+    <div class="note-box">
+      <label>Notas del consultor (opcional) — información cualitativa relevante que compartió la empresa</label>
+      <textarea id="area-note" placeholder="Ej. El gerente mencionó que...">${state.notes[area.key]}</textarea>
+    </div>
+    <div class="nav-buttons">
+      <button class="btn btn-ghost" onclick="prevStep()">← Anterior</button>
+      <button class="btn btn-primary" id="btn-area-next" onclick="nextFromArea(${areaIndex})">Continuar →</button>
+    </div>
+  `;
+
+  const qc = document.getElementById('q-container');
+  area.questions.forEach((qtext, qi)=>{
+    const card = document.createElement('div');
+    card.className = 'qcard';
+    card.innerHTML = `
+      <div class="qnum">Pregunta ${qi+1} de ${area.questions.length}</div>
+      <div class="qtext">${qtext}</div>
+      <div class="opts" data-q="${qi}">
+        ${SCALE.map((label,li)=>`<div class="opt ${state.answers[area.key][qi]===li+1?'sel':''}" data-val="${li+1}">${label}</div>`).join('')}
+      </div>
+    `;
+    qc.appendChild(card);
+  });
+
+  qc.querySelectorAll('.opts').forEach(optsEl=>{
+    const qi = parseInt(optsEl.dataset.q,10);
+    optsEl.querySelectorAll('.opt').forEach(optEl=>{
+      optEl.onclick = ()=>{
+        const val = parseInt(optEl.dataset.val,10);
+        state.answers[area.key][qi] = val;
+        optsEl.querySelectorAll('.opt').forEach(o=>o.classList.remove('sel'));
+        optEl.classList.add('sel');
+        saveState();
+        renderSidebar();
+      };
+    });
+  });
+
+  document.getElementById('area-note').addEventListener('input', (e)=>{
+    state.notes[area.key] = e.target.value;
+    saveState();
+  });
+}
+function nextFromArea(areaIndex){
+  const area = AREAS[areaIndex];
+  if(state.answers[area.key].some(v=>v==null)){
+    alert('Por favor responde todas las preguntas de esta sección antes de continuar.');
+    return;
+  }
+  state.step = areaIndex + 2;
+  saveState();
+  render();
+}
+function prevStep(){
+  state.step = Math.max(0, state.step - 1);
+  saveState();
+  render();
+}
+
+/* ======================================================================
+   MOTOR DE PUNTUACIÓN
+   ====================================================================== */
+function areaScore(areaKey){
+  const ans = state.answers[areaKey];
+  if(!ans || ans.some(v=>v==null)) return null;
+  const avg = ans.reduce((a,b)=>a+b,0) / ans.length; // 1..5
+  return Math.round(((avg-1)/4) * 100); // 0..100
+}
+function overallScore(){
+  const scores = AREAS.map(a=>areaScore(a.key)).filter(s=>s!=null);
+  if(scores.length===0) return 0;
+  return Math.round(scores.reduce((a,b)=>a+b,0)/scores.length);
+}
+
+/* ======================================================================
+   RENDER: RESULTADOS
+   ====================================================================== */
+function renderResults(){
+  const main = document.getElementById('main-content');
+  const scores = AREAS.map(a=>({...a, score:areaScore(a.key)}));
+  const overall = overallScore();
+  const overallBand = bandOf(overall);
+
+  const weakest = [...scores].sort((a,b)=>a.score-b.score).slice(0,3);
+  const strongest = [...scores].sort((a,b)=>b.score-a.score).slice(0,2);
+
+  const circumference = 2*Math.PI*58;
+  const dashOffset = circumference - (overall/100)*circumference;
+
+  main.innerHTML = `
+    <p class="eyebrow">Resultado final</p>
+    <h1 class="panel-title">Diagnóstico de ${state.company.nombre || 'la empresa'}</h1>
+    <p class="panel-sub">${state.company.sector || ''} ${state.company.tamano ? '· '+state.company.tamano : ''} ${state.company.consultor ? '· Consultor: '+state.company.consultor : ''}</p>
+
+    <div class="score-hero">
+      <div class="score-ring">
+        <svg viewBox="0 0 132 132">
+          <circle class="bg" cx="66" cy="66" r="58"/>
+          <circle class="fg" cx="66" cy="66" r="58" stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"/>
+        </svg>
+        <div class="num"><b>${overall}%</b><span>madurez global</span></div>
+      </div>
+      <div class="score-hero-text">
+        <h2>Nivel general: ${BAND_INFO[overallBand].label}</h2>
+        <p>${overallSummary(overall, overallBand, strongest, weakest)}</p>
+        <span class="band-chip" style="background:${BAND_INFO[overallBand].color};color:#fff;">${BAND_INFO[overallBand].label}</span>
+      </div>
+    </div>
+
+    <div class="radar-wrap">
+      <div>
+        <h3>Mapa de madurez por área</h3>
+        <div id="radar-chart"></div>
+      </div>
+      <div class="bars">
+        ${scores.map(s=>`
+          <div class="bar-row">
+            <div class="top"><span>${s.label}</span><b>${s.score}%</b></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${s.score}%;background:${BAND_INFO[bandOf(s.score)].color};"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="priority-box">
+      <h3>Prioridades de intervención</h3>
+      <p>Estas son las áreas con menor madurez relativa — lo recomendable es enfocar ahí las primeras acciones del plan de consultoría.</p>
+      <div class="priority-list">
+        ${weakest.map((s,i)=>`
+          <div class="pi"><span class="badge">${i+1}</span><span><b>${s.label}</b> — ${s.score}% (${BAND_INFO[bandOf(s.score)].label}). ${RECS[s.key][bandOf(s.score)][0]}</span></div>
+        `).join('')}
+      </div>
+    </div>
+
+    <h3 style="margin-top:44px;font-size:20px;">Detalle por área</h3>
+    ${scores.map(s=>{
+      const band = bandOf(s.score);
+      return `
+      <div class="area-report">
+        <div class="head">
+          <h4>${s.label}</h4>
+          <span class="band-chip" style="background:${BAND_INFO[band].color};color:#fff;">${BAND_INFO[band].label} · ${s.score}%</span>
+        </div>
+        <p class="diag">${areaDiagnosisText(s.label, band)}</p>
+        <ul class="rec-list">
+          ${RECS[s.key][band].map(r=>`<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>${r}</li>`).join('')}
+        </ul>
+        ${state.notes[s.key] ? `<p class="diag" style="margin-top:12px;"><b style="color:var(--navy-900);">Notas del consultor:</b> ${state.notes[s.key]}</p>` : ''}
+      </div>`;
+    }).join('')}
+
+    <div class="result-actions">
+      <button class="btn btn-amber" onclick="window.print()">🖨️ Exportar / imprimir informe</button>
+      <button class="btn btn-ghost" onclick="prevStep()">← Volver a las preguntas</button>
+      <button class="btn btn-ghost" onclick="restartAll()">Nuevo diagnóstico</button>
+    </div>
+  `;
+  drawRadar(scores);
+}
+
+function overallSummary(overall, band, strongest, weakest){
+  const strongTxt = strongest.map(s=>s.label).join(' y ');
+  const weakTxt = weakest.slice(0,2).map(s=>s.label).join(' y ');
+  const phrases = {
+    critico:`La empresa presenta brechas importantes en varias áreas clave. Se recomienda intervenir con prioridad en ${weakTxt} antes de avanzar en otras iniciativas.`,
+    desarrollo:`La empresa tiene bases funcionales pero con espacio claro de mejora. ${strongTxt} son los puntos más sólidos; ${weakTxt} concentran la mayor oportunidad de intervención.`,
+    solido:`La empresa muestra una gestión consistente en la mayoría de las áreas. ${strongTxt} destacan como fortalezas; se sugiere reforzar ${weakTxt} para consolidar el conjunto.`,
+    excelente:`La empresa evidencia una gestión madura y consistente en casi todas las áreas evaluadas, con ${strongTxt} como fortalezas diferenciales.`
+  };
+  return phrases[band];
+}
+function areaDiagnosisText(label, band){
+  const t = {
+    critico:`Esta área requiere atención urgente. Actualmente hay poca estructura o control, lo que representa un riesgo para la estabilidad del negocio.`,
+    desarrollo:`Esta área tiene elementos básicos en marcha, pero aún no está sistematizada. Con ajustes concretos puede consolidarse rápido.`,
+    solido:`Esta área funciona de forma consistente. El reto ahora es mantener la disciplina y buscar eficiencias adicionales.`,
+    excelente:`Esta área es una fortaleza clara de la empresa y puede usarse como palanca para otras iniciativas de mejora.`
+  };
+  return t[band];
+}
+
+function drawRadar(scores){
+  const size = 280, center = size/2, maxR = 100;
+  const n = scores.length;
+  const angle = (i)=> (Math.PI*2/n)*i - Math.PI/2;
+  const pt = (r,i)=> [center + r*Math.cos(angle(i)), center + r*Math.sin(angle(i))];
+
+  let axisLines = '', labels = '', gridPolys = '';
+  for(let g=1; g<=4; g++){
+    const r = (maxR/4)*g;
+    const pts = scores.map((_,i)=>pt(r,i).join(',')).join(' ');
+    gridPolys += `<polygon points="${pts}" fill="none" stroke="#e6e0d4" stroke-width="1"/>`;
+  }
+  scores.forEach((s,i)=>{
+    const [x,y] = pt(maxR,i);
+    axisLines += `<line x1="${center}" y1="${center}" x2="${x}" y2="${y}" stroke="#e6e0d4" stroke-width="1"/>`;
+    const [lx,ly] = pt(maxR+26,i);
+    labels += `<text x="${lx}" y="${ly}" font-size="9.5" fill="#5c6470" text-anchor="middle" font-family="Work Sans, sans-serif">${s.label.split(' ')[0]}</text>`;
+  });
+  const dataPts = scores.map((s,i)=> pt((s.score/100)*maxR, i).join(',')).join(' ');
+
+  document.getElementById('radar-chart').innerHTML = `
+    <svg viewBox="0 0 ${size} ${size+20}" width="100%" style="max-width:320px;">
+      ${gridPolys}${axisLines}
+      <polygon points="${dataPts}" fill="rgba(217,154,61,0.28)" stroke="#d99a3d" stroke-width="2"/>
+      ${scores.map((s,i)=>{ const [x,y]=pt((s.score/100)*maxR,i); return `<circle cx="${x}" cy="${y}" r="3.2" fill="#161f2b"/>`; }).join('')}
+      ${labels}
+    </svg>
+  `;
+}
+
+function restartAll(){
+  if(!confirm('¿Seguro que quieres iniciar un nuevo diagnóstico? Se perderán los datos actuales.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = { company:{ nombre:'', sector:'', tamano:'', consultor:'', fecha:'' }, answers:{}, notes:{}, step:0 };
+  render();
+}
+
+/* ======================================================================
+   RENDER PRINCIPAL
+   ====================================================================== */
+function render(){
+  renderSidebar();
+  if(state.step === 0){
+    renderCompanyStep();
+  } else if(state.step >= 1 && state.step <= AREAS.length){
+    renderAreaStep(state.step - 1);
+  } else {
+    renderResults();
+  }
+}
+
+loadState();
+render();
+</script>
+</body>
+</html>
